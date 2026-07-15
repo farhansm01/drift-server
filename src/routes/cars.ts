@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { getDb } from "../db";
 import type { Car } from "../types/Car";
+import { ObjectId } from "mongodb";
 
 const router = Router();
 
@@ -32,6 +33,28 @@ const REQUIRED_FIELDS: (keyof CreateCarRequestBody)[] = [
   "contactInfo",
   "userId",
 ];
+
+router.get("/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid car id." });
+  }
+
+  try {
+    const db = await getDb();
+    const car = await db.collection<Car>("cars").findOne({ _id: new ObjectId(id) });
+
+    if (!car) {
+      return res.status(404).json({ error: "Car not found." });
+    }
+
+    return res.status(200).json(car);
+  } catch (err) {
+    console.error("Error fetching car by id:", err);
+    return res.status(500).json({ error: "Failed to fetch car." });
+  }
+});
 
 router.get("/", async (req: Request, res: Response) => {
   try {
