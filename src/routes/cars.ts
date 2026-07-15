@@ -34,6 +34,32 @@ const REQUIRED_FIELDS: (keyof CreateCarRequestBody)[] = [
   "userId",
 ];
 
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    const db = await getDb();
+    
+
+    const car = await db.collection("cars").findOne({ _id: new ObjectId(id) });
+
+    if (!car) {
+      return res.status(404).json({ error: "Car not found." });
+    }
+
+    if (car.createdBy !== userId) {
+      return res.status(403).json({ error: "You can only delete your own listings." });
+    }
+
+    await db.collection("cars").deleteOne({ _id: new ObjectId(id) });
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("Delete car error:", err);
+    res.status(500).json({ error: "Failed to delete car." });
+  }
+});
+
 router.get("/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
 
