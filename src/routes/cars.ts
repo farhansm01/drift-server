@@ -33,6 +33,30 @@ const REQUIRED_FIELDS: (keyof CreateCarRequestBody)[] = [
   "userId",
 ];
 
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const db = await getDb();
+    const { userId } = req.query;
+
+    const query: Partial<Pick<Car, "createdBy">> = {};
+    if (userId && typeof userId === "string") {
+      query.createdBy = userId;
+    }
+
+    const cars = await db
+      .collection<Car>("cars")
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return res.status(200).json(cars);
+  } catch (err) {
+    console.error("Error fetching cars:", err);
+    return res.status(500).json({ error: "Failed to fetch cars." });
+  }
+});
+
+
 router.post("/", async (req: Request, res: Response) => {
   const body: CreateCarRequestBody = req.body;
 
