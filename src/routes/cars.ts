@@ -16,6 +16,7 @@ interface CreateCarRequestBody {
   fuelType?: string;
   location?: string;
   image?: string;
+  images?: string[];
   contactInfo?: string;
   userId?: string;
 }
@@ -34,13 +35,12 @@ const REQUIRED_FIELDS: (keyof CreateCarRequestBody)[] = [
   "userId",
 ];
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { userId } = req.body;
 
     const db = await getDb();
-    
 
     const car = await db.collection("cars").findOne({ _id: new ObjectId(id) });
 
@@ -61,7 +61,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 router.get("/:id", async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
   if (!ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid car id." });
@@ -105,7 +105,6 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-
 router.post("/", async (req: Request, res: Response) => {
   const body: CreateCarRequestBody = req.body;
 
@@ -134,6 +133,7 @@ router.post("/", async (req: Request, res: Response) => {
       fuelType: body.fuelType as Car["fuelType"],
       location: body.location as string,
       image: body.image || "",
+      images: Array.isArray(body.images) ? body.images : [],
       contactInfo: body.contactInfo as string,
       createdBy: body.userId as string,
       createdAt: new Date(),

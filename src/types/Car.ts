@@ -18,15 +18,16 @@ export interface Car {
   title: string;
   shortDescription: string;
   fullDescription: string;
-  price: number; // asking price, in BDT (৳)
+  price: number;
   category: CarCategory;
   seats: number;
   transmission: Transmission;
   fuelType: FuelType;
   location: string;
-  image: string; // imgbb-hosted URL — never binary/file data
-  contactInfo: string; // seller's phone or email — how a buyer reaches them
-  createdBy: string; // the user id (from BetterAuth) who added this car
+  image: string; // main cover photo — imgbb-hosted URL
+  images?: string[]; // additional photos, optional
+  contactInfo: string;
+  createdBy: string;
   createdAt: Date;
 }
 
