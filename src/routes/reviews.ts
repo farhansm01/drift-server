@@ -5,10 +5,14 @@ import type { Review } from "../types/Review";
 const router = Router();
 
 router.post("/", async (req: Request, res: Response) => {
-  const { carId, userId, userName, rating, comment } = req.body;
+  const { type = "car", carId, carTitle, userId, userName, userAvatar, userRole, rating, comment, approved } = req.body;
 
-  if (!carId || !userId || !userName || !rating || !comment) {
+  if (!userId || !userName || !rating || !comment) {
     return res.status(400).json({ error: "Missing required fields." });
+  }
+
+  if (type === "car" && !carId) {
+    return res.status(400).json({ error: "carId is required for car reviews." });
   }
 
   if (rating < 1 || rating > 5) {
@@ -18,12 +22,19 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const db = await getDb();
 
+    const isPlatform = type === "platform";
+
     const newReview: Omit<Review, "_id"> = {
-      carId,
-      userId,
-      userName,
+      type: isPlatform ? "platform" : "car",
+      carId: carId ? String(carId) : undefined,
+      carTitle: carTitle ? String(carTitle) : undefined,
+      userId: String(userId),
+      userName: String(userName),
+      userAvatar: userAvatar ? String(userAvatar) : undefined,
+      userRole: userRole ? String(userRole) : isPlatform ? "Platform User" : "Verified Buyer",
       rating: Number(rating),
-      comment,
+      comment: String(comment),
+      approved: approved !== undefined ? Boolean(approved) : isPlatform ? false : true,
       createdAt: new Date(),
     };
 
@@ -39,15 +50,22 @@ router.post("/", async (req: Request, res: Response) => {
 router.get("/", async (req: Request, res: Response) => {
   try {
     const db = await getDb();
-    const { carId } = req.query;
+    const { type, carId, approved } = req.query;
 
-    if (!carId || typeof carId !== "string") {
-      return res.status(400).json({ error: "carId query parameter is required." });
+    const filter: any = {};
+
+    if (carId && typeof carId === "string") {
+      filter.carId = carId;
+    } else if (type === "platform" || !carId) {
+      filter.type = "platform";
+      if (approved !== "false") {
+        filter.approved = true;
+      }
     }
 
     const reviews = await db
       .collection<Review>("reviews")
-      .find({ carId })
+      .find(filter)
       .sort({ createdAt: -1 })
       .toArray();
 
